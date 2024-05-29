@@ -192,16 +192,23 @@ module
 
       | C.CmpExchange (eloc,eold,enew,a) ->
           let mloc =  build_semantics_expr false eloc ii
-          and mold =  build_semantics_expr true eold ii in
+          and mold =  build_semantics_expr true eold ii
+          and mmook = match a with
+          | [] -> Warn.user_error "Missing success memory order tag for __cmpxchg"
+          | fst::_ -> [fst]
+          and mmono = match a with
+          | [] -> Warn.user_error "Missing success memory order tag for __cmpxchg"
+          | [_] -> Warn.user_error "Missing failure memory order tag for __cmpxchg"
+          | _::snd::_ -> [snd] in
           M.altT
             (let mnew = build_semantics_expr true enew ii
              and rmem vloc =
-               read_mem_atomic true (MOorAN.AN a) vloc ii
+               read_mem_atomic true (MOorAN.AN mmook) vloc ii
              and wmem vloc w =
-               write_mem_atomic (MOorAN.AN a) vloc w ii >>! () in
+               write_mem_atomic (MOorAN.AN mmook) vloc w ii >>! () in
              M.linux_cmpexch_ok mloc mold mnew rmem wmem M.assign)
             (M.linux_cmpexch_no mloc mold
-               (fun vloc -> read_mem_atomic true an_once vloc ii)
+               (fun vloc -> read_mem_atomic true (MOorAN.AN mmono) vloc ii)
                M.neqT)
 
       | C.Fetch(l,op,e,mo) ->
