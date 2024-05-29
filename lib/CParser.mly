@@ -291,8 +291,8 @@ instruction:
   { Unlock ($3,MutexLinux) }
 | UNDERFENCE LBRACE annot_list RBRACE SEMI
   { Fence(AN $3) }
-| UNDERATOMICOP LPAR expr COMMA atomic_op COMMA expr RPAR SEMI
-  { AtomicOp($3,$5,$7) }
+| UNDERATOMICOP LBRACE annot_list RBRACE LPAR expr COMMA atomic_op COMMA expr RPAR SEMI
+  { AtomicOp($6,$8,$10,$3) }
 | FENCE LPAR MEMORDER RPAR SEMI
   { Fence(MO $3) }
 | CODEVAR SEMI

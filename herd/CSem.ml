@@ -59,9 +59,7 @@ module
 
       module MOorAN = MemOrderOrAnnot
       let a_once = ["once"]
-      let a_noreturn = ["noreturn"]
       let an_once = MOorAN.AN a_once
-      let a_mb = ["mb"]
       let a_rb_dep = ["rb_dep"]
       let no_mo = MOorAN.AN []
       let mo_as_anmo mo = MOorAN.MO mo
@@ -102,7 +100,6 @@ module
 
 
       let mk_fence_a a ii = M.mk_fence (Act.Fence  (MOorAN.AN a)) ii
-      let mk_mb ii =  mk_fence_a a_mb ii
       let mk_rb_dep ii =   mk_fence_a a_rb_dep ii
 
       let xchg is_data rloc re a ii =
@@ -387,8 +384,8 @@ module
               M.mk_singleton_es (Act.Unlock (A.Location_global l,k)) ii
                 >>= fun _ -> M.unitT (ii.A.program_order_index, next0)
 (********************)
-        | C.AtomicOp  (eloc,op,e) ->
-            build_atomic_op C.OpReturn a_noreturn a_once eloc op e ii
+        | C.AtomicOp  (eloc,op,e,a) ->
+            build_atomic_op C.OpReturn a a_once eloc op e ii
               >>= fun _ -> M.unitT (ii.A.program_order_index, next0)
 (********************)
         | C.Fence(mo) ->
