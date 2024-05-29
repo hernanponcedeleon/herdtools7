@@ -106,16 +106,8 @@ module
       let mk_rb_dep ii =   mk_fence_a a_rb_dep ii
 
       let xchg is_data rloc re a ii =
-        let aw = match a with
-        | ["release"] -> MOorAN.AN a
-        | ["mb"] -> MOorAN.AN a
-        | _ -> an_once
-        and ar = match a with
-        | ["acquire"] -> MOorAN.AN a
-        | ["mb"] -> MOorAN.AN a
-        | _ -> an_once in
-        let rmem = fun loc -> read_mem_atomic is_data ar loc ii
-        and wmem = fun loc v -> write_mem_atomic aw loc v ii >>! () in
+        let rmem = fun loc -> read_mem_atomic is_data (MOorAN.AN a) loc ii
+        and wmem = fun loc v -> write_mem_atomic (MOorAN.AN a) loc v ii >>! () in
         M.linux_exch rloc re rmem wmem
 
       let cxchg is_data rloc re mo v_loc ii =
@@ -207,13 +199,9 @@ module
           M.altT
             (let mnew = build_semantics_expr true enew ii
              and rmem vloc =
-               read_mem_atomic true
-                 (match a with ["acquire"] -> MOorAN.AN a | ["mb"] -> MOorAN.AN a | _ -> an_once)
-                 vloc ii
+               read_mem_atomic true (MOorAN.AN a) vloc ii
              and wmem vloc w =
-               write_mem_atomic
-                 (match a with ["release"] ->  MOorAN.AN a | ["mb"] -> MOorAN.AN a | _ -> an_once)
-                 vloc w ii >>! () in
+               write_mem_atomic (MOorAN.AN a) vloc w ii >>! () in
              M.linux_cmpexch_ok mloc mold mnew rmem wmem M.assign)
             (M.linux_cmpexch_no mloc mold
                (fun vloc -> read_mem_atomic true an_once vloc ii)
@@ -258,13 +246,7 @@ module
 
 
       | C.AtomicOpReturn (eloc,op,e,ret,a) ->
-          begin match a with
-          | _ ->
-              build_atomic_op ret
-                (match a with ["acquire"] -> a | ["mb"] -> a | _ -> a_once)
-                (match a with ["release"] -> a | ["mb"] -> a | _ -> a_once)
-                eloc op e ii
-          end
+          build_atomic_op ret a a eloc op e ii
       | C.AtomicAddUnless (eloc,ea,eu,retbool) ->
           (* read arguments *)
           let mloc = build_semantics_expr false eloc ii
